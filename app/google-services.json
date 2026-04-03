@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "835220999412",
+    "project_id": "pharmacy-stock-f9dde",
+    "storage_bucket": "pharmacy-stock-f9dde.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:835220999412:android:7f3a02d84c84a87826e2a1",
+        "android_client_info": {
+          "package_name": "com.example.pharmacystock"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkn_w0KlT_gDc0B1y8wwWcm6Otv2_HT-E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
