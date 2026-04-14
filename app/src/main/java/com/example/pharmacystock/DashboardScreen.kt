@@ -23,10 +23,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.navigation.NavHostController
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.statusBarsPadding
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import androidx.compose.runtime.*
+import androidx.compose.material3.*
 
 @Composable
 fun DashboardScreen(
     viewModel: PharmacyViewModel,
+    innerNavController: NavHostController,
     navController: NavHostController
 ) {
 
@@ -34,6 +39,10 @@ fun DashboardScreen(
         viewModel.loadMedicines()
         viewModel.loadTransactions()
     }
+
+    var profileMenuExpanded by remember { mutableStateOf(false) }
+
+    var showAllTransactions by remember { mutableStateOf(false) }
 
     val medicines = viewModel.medicines
     val transactions = viewModel.transactions
@@ -54,15 +63,18 @@ fun DashboardScreen(
             else -> true
         }
     }
-    val recentTransactions = filteredTransactions.takeLast(5).reversed()
+    val recentTransactions = if (showAllTransactions)
+        filteredTransactions.reversed()
+    else
+        filteredTransactions.takeLast(5).reversed()
     var menuExpanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .padding(16.dp)
-            .background(Color.White)
     ) {
 
         // HEADER
@@ -81,7 +93,12 @@ fun DashboardScreen(
             )
 
             Row {
-                IconButton(onClick = { }, modifier = Modifier.size(36.dp)) {
+                IconButton(
+                    onClick = {
+                        navController.navigate("notifications")
+                    },
+                    modifier = Modifier.size(36.dp)
+                ) {
                     Icon(
                         painter = painterResource(id = R.drawable.notification),
                         contentDescription = null,
@@ -89,12 +106,47 @@ fun DashboardScreen(
                     )
                 }
 
-                IconButton(onClick = { }, modifier = Modifier.size(36.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.profile),
-                        contentDescription = null,
-                        modifier = Modifier.size(30.dp)
-                    )
+                Box {
+
+                    IconButton(
+                        onClick = { profileMenuExpanded = true },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.profile),
+                            contentDescription = null,
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = profileMenuExpanded,
+                        onDismissRequest = { profileMenuExpanded = false },
+                        modifier = Modifier
+                            .width(220.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surface,
+                                RoundedCornerShape(12.dp)
+                            )
+                    ) {
+
+                        ProfileDropdownContent(
+                            onProfileClick = {
+                                profileMenuExpanded = false
+                                navController.navigate("profile")
+                            },
+                            onSettingsClick = {
+                                profileMenuExpanded = false
+                                navController.navigate("settings")
+                            },
+                            onLogout = {
+                                profileMenuExpanded = false
+                                navController.navigate("signin") {
+                                    popUpTo("main") { inclusive = true }
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -109,19 +161,19 @@ fun DashboardScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             TabItem("Dashboard", true) {
-                navController.navigate("dashboard")
+                innerNavController.navigate("dashboard")
             }
 
             TabItem("Medicines", false) {
-                navController.navigate("medicines")
+                innerNavController.navigate("medicines")
             }
 
             TabItem("Stock In/Out", false) {
-                navController.navigate("stockInOut")
+                innerNavController.navigate("stockInOut")
             }
 
             TabItem("Reports", false) {
-                navController.navigate("reports")
+                innerNavController.navigate("reports")
             }
         }
 
@@ -188,6 +240,15 @@ fun DashboardScreen(
                 text = "Recent Transactions",
                 fontSize = 16.sp,
                 color = Color(0xFF2E3A8C)
+            )
+
+            Text(
+                text = if (showAllTransactions) "Show Less" else "View All",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable {
+                    showAllTransactions = !showAllTransactions
+                }
             )
 
             Box {
@@ -288,7 +349,7 @@ fun DashboardScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 200.dp)
+                        .heightIn(max = if (showAllTransactions) 500.dp else 200.dp)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -310,7 +371,8 @@ fun DashboardScreen(
                             Text(
                                 text = medicineName,
                                 modifier = Modifier.weight(2f),
-                                fontSize = 13.sp
+                                fontSize = 13.sp,
+                                color = Color.Black
                             )
 
                             Text(
@@ -325,7 +387,8 @@ fun DashboardScreen(
                             Text(
                                 text = transaction.quantity.toString(),
                                 modifier = Modifier.weight(1f),
-                                fontSize = 13.sp
+                                fontSize = 13.sp,
+                                color = Color.Black
                             )
                         }
                     }
@@ -406,6 +469,134 @@ fun DashboardCard(
                 text = "Items",
                 color = Color.White,
                 fontSize = 12.sp
+            )
+        }
+    }
+}
+
+@Composable
+fun ProfileDropdownContent(
+    onProfileClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onLogout: () -> Unit
+) {
+
+    val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
+
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+
+        val userId = auth.currentUser?.uid
+
+        if (userId != null) {
+
+            db.collection("users")
+                .document(userId)
+                .get()
+                .addOnSuccessListener { document ->
+
+                    name = document.getString("name") ?: ""
+                    email = document.getString("email") ?: ""
+                }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Icon(
+                painter = painterResource(id = R.drawable.profile),
+                contentDescription = null,
+                modifier = Modifier.size(40.dp),
+                tint = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Column {
+                Text(name, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                Text(email, fontSize = 12.sp, color = Color.Gray)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onProfileClick() }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Image(
+                painter = painterResource(id = R.drawable.user),
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Text("MY PROFILE", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onSettingsClick() }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Image(
+                painter = painterResource(id = R.drawable.setting),
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Text("Settings", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onLogout() }
+                .background(
+                    MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+                )
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Image(
+                painter = painterResource(id = R.drawable.logout),
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Text(
+                text = "Log Out",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.error
             )
         }
     }

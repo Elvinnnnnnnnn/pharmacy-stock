@@ -19,7 +19,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.statusBarsPadding
 
 @Composable
-fun MainNavScreen(navController: NavHostController) {
+fun MainNavScreen(
+    navController: NavHostController,
+    isDarkMode: Boolean
+) {
     val viewModel: PharmacyViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val innerNavController = rememberNavController()
 
@@ -34,14 +37,19 @@ fun MainNavScreen(navController: NavHostController) {
         innerNavController.currentBackStackEntryAsState().value?.destination?.route
 
     Scaffold(
-        containerColor = Color.White,
+        containerColor = if (isDarkMode)
+            MaterialTheme.colorScheme.background
+        else
+            Color.White,
         bottomBar = {
             NavigationBar(
                 modifier = Modifier
-                    .navigationBarsPadding()
                     .height(60.dp),
                 tonalElevation = 0.dp,
-                containerColor = Color.White
+                containerColor = if (isDarkMode)
+                    MaterialTheme.colorScheme.surface
+                else
+                    Color.White
             ) {
 
                 NavigationBarItem(
@@ -214,7 +222,9 @@ fun MainNavScreen(navController: NavHostController) {
             }
         ){
 
-            composable("dashboard") { DashboardScreen(viewModel, innerNavController) }
+            composable("dashboard") {
+                DashboardScreen(viewModel, innerNavController, navController)
+            }
             composable("medicines") { MedicinesScreen(viewModel) }
             composable("stockInOut") { StockInOutScreen(viewModel) }
             composable("reports") { ReportsScreen(viewModel) }
@@ -232,8 +242,8 @@ fun NavItem(
 ) {
 
     val isSelected = currentRoute == route
-    val activeColor = Color(0xFF1E2A78)
-    val inactiveColor = Color.Gray
+    val activeColor = MaterialTheme.colorScheme.primary
+    val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,

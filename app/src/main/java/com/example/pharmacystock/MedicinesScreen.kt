@@ -71,8 +71,9 @@ fun MedicinesScreen(viewModel: PharmacyViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
             .padding(16.dp)
-            .background(Color.White)
     ) {
 
         // HEADER
@@ -236,6 +237,12 @@ fun MedicinesScreen(viewModel: PharmacyViewModel) {
                                 "",
                                 expiryDate
                             )
+
+                            if (imageUri != null) {
+                                viewModel.uploadImage(imageUri!!) { url ->
+                                    viewModel.updateLastMedicineImage(url)
+                                }
+                            }
                         }
 
                         name = ""
@@ -448,14 +455,13 @@ fun MedicineItem(
     ) {
 
         AsyncImage(
-            model = if (medicine.imageUrl.isNotEmpty())
-                medicine.imageUrl
-            else
-                R.drawable.pill,
+            model = medicine.imageUrl.ifEmpty { R.drawable.pill },
             contentDescription = null,
             modifier = Modifier
                 .size(56.dp)
-                .clip(CircleShape)
+                .clip(CircleShape),
+            placeholder = painterResource(id = R.drawable.pill),
+            error = painterResource(id = R.drawable.pill)
         )
 
         Spacer(modifier = Modifier.width(12.dp))

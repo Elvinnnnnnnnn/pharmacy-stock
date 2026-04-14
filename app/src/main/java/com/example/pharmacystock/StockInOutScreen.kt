@@ -29,8 +29,9 @@ fun StockInOutScreen(viewModel: PharmacyViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
             .padding(16.dp)
-            .background(Color.White)
     ) {
 
         // HEADER

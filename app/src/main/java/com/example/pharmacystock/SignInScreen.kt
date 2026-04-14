@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.foundation.clickable
 import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.ui.text.input.VisualTransformation
 
 @Composable
 fun SignInScreen(navController: NavController) {
@@ -25,6 +26,8 @@ fun SignInScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+
+    var passwordVisible by remember { mutableStateOf(false) }
 
     val primaryDark = Color(0xFF0A0F2C)
     val green = Color(0xFF4CAF50)
@@ -102,7 +105,25 @@ fun SignInScreen(navController: NavController) {
                     tint = Color.Gray
                 )
             },
-            visualTransformation = PasswordVisualTransformation(),
+            trailingIcon = {
+                Icon(
+                    painter = painterResource(
+                        id = if (passwordVisible) R.drawable.view else R.drawable.hide
+                    ),
+                    contentDescription = "Toggle Password",
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clickable {
+                            passwordVisible = !passwordVisible
+                        },
+                    tint = Color.Gray
+                )
+            },
+            visualTransformation = if (passwordVisible) {
+                VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -110,10 +131,8 @@ fun SignInScreen(navController: NavController) {
                 focusedTextColor = Color.Black,
                 unfocusedTextColor = Color.Black,
                 cursorColor = Color.Black,
-
                 focusedBorderColor = inputBorder,
                 unfocusedBorderColor = inputBorder,
-
                 focusedPlaceholderColor = Color.Gray,
                 unfocusedPlaceholderColor = Color.Gray
             )
@@ -171,7 +190,23 @@ fun SignInScreen(navController: NavController) {
 
         Text(
             text = "Forgot Password?",
-            color = Color.Blue
+            color = Color.Blue,
+            modifier = Modifier.clickable {
+
+                if (email.isEmpty()) {
+                    errorMessage = "Enter your email first"
+                    return@clickable
+                }
+
+                auth.sendPasswordResetEmail(email)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            errorMessage = "Reset link sent to your email"
+                        } else {
+                            errorMessage = "Failed to send reset email"
+                        }
+                    }
+            }
         )
 
         Spacer(modifier = Modifier.height(16.dp))

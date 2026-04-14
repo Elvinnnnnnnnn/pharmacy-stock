@@ -18,6 +18,8 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
 
 @Composable
 fun ReportsScreen(viewModel: PharmacyViewModel) {
@@ -25,6 +27,14 @@ fun ReportsScreen(viewModel: PharmacyViewModel) {
     LaunchedEffect(Unit) {
         viewModel.loadTransactions()
     }
+
+    val context = LocalContext.current
+    val notifiedItems = remember { mutableStateListOf<String>() }
+    val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    val isNotificationEnabled = prefs.getBoolean("notifications", false)
+
+    val lowStockEnabled = prefs.getBoolean("low_stock", true)
+    val outStockEnabled = prefs.getBoolean("out_stock", true)
 
     var currentIndex by remember { mutableStateOf(0) }
     val medicines = viewModel.medicines
@@ -48,8 +58,9 @@ fun ReportsScreen(viewModel: PharmacyViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
             .padding(16.dp)
-            .background(Color.White)
     ) {
 
         // HEADER
@@ -149,6 +160,37 @@ fun ReportsScreen(viewModel: PharmacyViewModel) {
             }
         }
 
+        LaunchedEffect(alertList) {
+
+            if (isNotificationEnabled) {
+
+                alertList.forEach { med ->
+
+                    if (lowStockEnabled && med.quantity in 1..10 && !notifiedItems.contains(med.id)) {
+
+                        NotificationHelper.showNotification(
+                            context,
+                            "Low Stock Alert",
+                            "${med.name} is low on stock (${med.quantity} left)"
+                        )
+
+                        notifiedItems.add(med.id)
+                    }
+
+                    if (outStockEnabled && med.quantity == 0 && !notifiedItems.contains(med.id)) {
+
+                        NotificationHelper.showNotification(
+                            context,
+                            "Out of Stock",
+                            "${med.name} is out of stock"
+                        )
+
+                        notifiedItems.add(med.id)
+                    }
+                }
+            }
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -160,7 +202,7 @@ fun ReportsScreen(viewModel: PharmacyViewModel) {
             ) {
 
                 alertList.forEach { med ->
-
+                    // EXISTING UI
                     when {
                         med.quantity == 0 -> {
                             AlertItem(
@@ -177,7 +219,7 @@ fun ReportsScreen(viewModel: PharmacyViewModel) {
                                 med.name,
                                 "Current Stock: ${med.quantity}",
                                 "Low Stock",
-                                Color(0xFFFFE0B2),
+                                Color(0xFF2E3A8C),
                                 med.imageUrl
                             )
                         }
@@ -331,7 +373,11 @@ fun AlertItem(
                 .background(badgeColor, RoundedCornerShape(20.dp))
                 .padding(horizontal = 10.dp, vertical = 4.dp)
         ) {
-            Text(status, fontSize = 12.sp)
+            Text(
+                text = status,
+                fontSize = 12.sp,
+                color = Color.White
+            )
         }
     }
 }

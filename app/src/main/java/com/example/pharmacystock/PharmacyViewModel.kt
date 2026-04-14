@@ -28,7 +28,22 @@ class PharmacyViewModel : ViewModel() {
         imageUrl: String,
         expiryDate: Long
     ) {
-        val medicine = hashMapOf(
+        val tempId = UUID.randomUUID().toString()
+
+        val newMedicine = Medicine(
+            id = tempId,
+            name = name,
+            type = type,
+            price = price,
+            quantity = quantity,
+            imageUrl = imageUrl,
+            expiryDate = expiryDate
+        )
+
+        // ADD TO UI IMMEDIATELY
+        medicines.add(newMedicine)
+
+        val medicineMap = hashMapOf(
             "name" to name,
             "type" to type,
             "price" to price,
@@ -38,12 +53,12 @@ class PharmacyViewModel : ViewModel() {
         )
 
         db.collection("medicines")
-            .add(medicine)
+            .add(medicineMap)
             .addOnSuccessListener {
-                println("SUCCESS: Added to Firestore")
+                println("Saved to Firebase")
             }
             .addOnFailureListener {
-                println("ERROR: ${it.message}")
+                println("Error: ${it.message}")
             }
     }
 
@@ -182,6 +197,19 @@ class PharmacyViewModel : ViewModel() {
                 )
             )
         }
+    }
+
+    fun updateLastMedicineImage(imageUrl: String) {
+        val last = medicines.lastOrNull() ?: return
+
+        updateMedicine(
+            id = last.id,
+            name = last.name,
+            type = last.type,
+            price = last.price,
+            quantity = last.quantity,
+            imageUrl = imageUrl
+        )
     }
 
     // STOCK OUT
