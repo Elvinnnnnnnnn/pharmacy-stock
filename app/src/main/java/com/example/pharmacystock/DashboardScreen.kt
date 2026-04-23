@@ -191,7 +191,10 @@ fun DashboardScreen(
                     total.toString(),
                     R.drawable.drugs,
                     Color(0xFF4A90E2),
-                    Modifier.weight(1f)
+                    Modifier.weight(1f),
+                    onClick = {
+                        navController.navigate("total_medicines")
+                    }
                 )
 
                 DashboardCard(
@@ -199,7 +202,10 @@ fun DashboardScreen(
                     lowStock.toString(),
                     R.drawable.warning,
                     Color(0xFFFF7A00),
-                    Modifier.weight(1f)
+                    Modifier.weight(1f),
+                    onClick = {
+                        navController.navigate("low_stock")
+                    }
                 )
             }
 
@@ -214,7 +220,10 @@ fun DashboardScreen(
                     expiringSoon.toString(),
                     R.drawable.clock,
                     Color(0xFFE53935),
-                    Modifier.weight(1f)
+                    Modifier.weight(1f),
+                    onClick = {
+                        navController.navigate("expiring")
+                    }
                 )
 
                 DashboardCard(
@@ -222,7 +231,10 @@ fun DashboardScreen(
                     outOfStock.toString(),
                     R.drawable.line,
                     Color(0xFF3E4A59),
-                    Modifier.weight(1f)
+                    Modifier.weight(1f),
+                    onClick = {
+                        navController.navigate("out_of_stock")
+                    }
                 )
             }
         }
@@ -427,7 +439,8 @@ fun DashboardCard(
     count: String,
     icon: Int,
     color: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
     Column(
         modifier = modifier
@@ -436,6 +449,7 @@ fun DashboardCard(
                 color = color,
                 shape = RoundedCornerShape(16.dp)
             )
+            .clickable { onClick() }
             .padding(12.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.background
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.material3.Text
 
 
 class MainActivity : ComponentActivity() {
@@ -147,6 +148,22 @@ class MainActivity : ComponentActivity() {
 
                     composable("faq") {
                         FAQScreen(navController)
+                    }
+
+                    composable("total_medicines") {
+                        MedicinesScreen(viewModel, navController, "ALL")
+                    }
+
+                    composable("low_stock") {
+                        MedicinesScreen(viewModel, navController, "LOW_STOCK")
+                    }
+
+                    composable("expiring") {
+                        MedicinesScreen(viewModel, navController, "EXPIRING")
+                    }
+
+                    composable("out_of_stock") {
+                        MedicinesScreen(viewModel, navController, "OUT_OF_STOCK")
                     }
                 }
             }

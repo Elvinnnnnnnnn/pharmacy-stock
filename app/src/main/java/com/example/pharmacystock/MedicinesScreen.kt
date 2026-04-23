@@ -30,9 +30,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.*
 
 @Composable
-fun MedicinesScreen(viewModel: PharmacyViewModel) {
+fun MedicinesScreen(
+    viewModel: PharmacyViewModel,
+    navController: NavHostController,
+    filter: String = "ALL"
+) {
 
     LaunchedEffect(Unit) {
         viewModel.loadMedicines()
@@ -48,6 +54,9 @@ fun MedicinesScreen(viewModel: PharmacyViewModel) {
     var expiryDate by remember { mutableStateOf(0L) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var selectedCategory by remember { mutableStateOf("All") }
+    val currentTime = System.currentTimeMillis()
+    val thirtyDays = 30L * 24 * 60 * 60 * 1000
+
     val filteredMedicines = medicines.filter {
 
         val matchesSearch = it.name.contains(searchQuery, ignoreCase = true)
@@ -55,7 +64,14 @@ fun MedicinesScreen(viewModel: PharmacyViewModel) {
         val matchesCategory =
             selectedCategory == "All" || it.type == selectedCategory
 
-        matchesSearch && matchesCategory
+        val matchesDashboardFilter = when (filter) {
+            "LOW_STOCK" -> it.quantity in 1..10
+            "OUT_OF_STOCK" -> it.quantity == 0
+            "EXPIRING" -> it.expiryDate in currentTime..(currentTime + thirtyDays)
+            else -> true
+        }
+
+        matchesSearch && matchesCategory && matchesDashboardFilter
     }
     val categories = listOf("All") + medicines
         .map { it.type }
@@ -79,14 +95,33 @@ fun MedicinesScreen(viewModel: PharmacyViewModel) {
         // HEADER
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+
+            Image(
+                painter = painterResource(id = R.drawable.arrow),
+                contentDescription = "Back",
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable {
+                        navController.popBackStack()
+                    }
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
             Text(
-                text = "Medicines",
+                text = when (filter) {
+                    "LOW_STOCK" -> "Low Stock"
+                    "OUT_OF_STOCK" -> "Out of Stock"
+                    "EXPIRING" -> "Expiring Soon"
+                    else -> "All Medicines"
+                },
                 fontSize = 22.sp,
                 color = Color(0xFF2E3A8C)
             )
+
+            Spacer(modifier = Modifier.weight(1f))
 
             IconButton(
                 onClick = { showDialog = true },

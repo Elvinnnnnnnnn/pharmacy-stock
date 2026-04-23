@@ -225,7 +225,7 @@ fun MainNavScreen(
             composable("dashboard") {
                 DashboardScreen(viewModel, innerNavController, navController)
             }
-            composable("medicines") { MedicinesScreen(viewModel) }
+            composable("medicines") { MedicinesScreen(viewModel, navController) }
             composable("stockInOut") { StockInOutScreen(viewModel) }
             composable("reports") { ReportsScreen(viewModel) }
         }
